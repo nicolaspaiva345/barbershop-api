@@ -10,16 +10,19 @@ import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import com.barbershop.barbershop_api.exception.ResourceNotFoundException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    // ✅ Trata erros de validação (@NotBlank, @Future, etc.)
+    // =========================================
+    // ERROS DE VALIDAÇÃO
+    // =========================================
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<Map<String, Object>> tratarErrosDeValidacao(
-            MethodArgumentNotValidException ex) {
+            MethodArgumentNotValidException ex
+    ) {
 
-        // Coleta todos os campos com erro e suas mensagens
         List<String> erros = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -27,53 +30,116 @@ public class GlobalExceptionHandler {
                 .toList();
 
         Map<String, Object> resposta = new HashMap<>();
+
         resposta.put("timestamp", LocalDateTime.now());
-        resposta.put("status", 400);
+        resposta.put("status", HttpStatus.BAD_REQUEST.value());
         resposta.put("erro", "Dados inválidos");
         resposta.put("mensagens", erros);
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resposta);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(resposta);
     }
 
-    // ✅ Trata erros de regra de negócio (ex: horário ocupado)
+    // =========================================
+    // REGRAS DE NEGÓCIO
+    // =========================================
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, Object>> tratarErroDeNegocio(
-            IllegalArgumentException ex) {
+            IllegalArgumentException ex
+    ) {
 
         Map<String, Object> resposta = new HashMap<>();
+
         resposta.put("timestamp", LocalDateTime.now());
-        resposta.put("status", 400);
+        resposta.put("status", HttpStatus.BAD_REQUEST.value());
         resposta.put("erro", "Regra de negócio violada");
         resposta.put("mensagem", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resposta);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(resposta);
     }
 
-    // ✅ Trata erros de estado inválido (ex: cancelar algo já cancelado)
+    // =========================================
+    // OPERAÇÃO INVÁLIDA
+    // =========================================
     @ExceptionHandler(IllegalStateException.class)
     public ResponseEntity<Map<String, Object>> tratarErroDeEstado(
-            IllegalStateException ex) {
+            IllegalStateException ex
+    ) {
 
         Map<String, Object> resposta = new HashMap<>();
+
         resposta.put("timestamp", LocalDateTime.now());
-        resposta.put("status", 400);
+        resposta.put("status", HttpStatus.BAD_REQUEST.value());
         resposta.put("erro", "Operação inválida");
         resposta.put("mensagem", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(resposta);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(resposta);
     }
 
-    // ✅ Trata recurso não encontrado (ex: ID que não existe)
-    @ExceptionHandler(RuntimeException.class)
+    // =========================================
+    // RECURSO NÃO ENCONTRADO
+    // =========================================
+    @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<Map<String, Object>> tratarNaoEncontrado(
-            RuntimeException ex) {
+            ResourceNotFoundException ex
+    ) {
 
         Map<String, Object> resposta = new HashMap<>();
+
         resposta.put("timestamp", LocalDateTime.now());
-        resposta.put("status", 404);
+        resposta.put("status", HttpStatus.NOT_FOUND.value());
         resposta.put("erro", "Recurso não encontrado");
         resposta.put("mensagem", ex.getMessage());
 
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(resposta);
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(resposta);
+    }
+
+    // =========================================
+    // ACESSO NEGADO
+    // =========================================
+    @ExceptionHandler(SecurityException.class)
+    public ResponseEntity<Map<String, Object>> tratarAcessoNegado(
+            SecurityException ex
+    ) {
+
+        Map<String, Object> resposta = new HashMap<>();
+
+        resposta.put("timestamp", LocalDateTime.now());
+        resposta.put("status", HttpStatus.FORBIDDEN.value());
+        resposta.put("erro", "Acesso negado");
+        resposta.put("mensagem", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.FORBIDDEN)
+                .body(resposta);
+    }
+
+    // =========================================
+    // ERRO INTERNO DO SERVIDOR
+    // =========================================
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<Map<String, Object>> tratarErroGeral(
+            Exception ex
+    ) {
+
+        Map<String, Object> resposta = new HashMap<>();
+
+        resposta.put("timestamp", LocalDateTime.now());
+        resposta.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
+        resposta.put("erro", "Erro interno do servidor");
+
+        // Em produção você pode remover essa linha
+        resposta.put("mensagem", ex.getMessage());
+
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(resposta);
     }
 }
